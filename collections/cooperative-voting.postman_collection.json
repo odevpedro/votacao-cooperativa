@@ -1,0 +1,216 @@
+{
+  "info": {
+    "_postman_id": "36b791d8-9bd8-4e16-83d2-97c3311edbcc",
+    "name": "Cooperative Voting API",
+    "description": "Fluxo sequencial completo, contratos mobile e cenários negativos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('associateId')) {",
+          "  const suffix = String(Date.now()).slice(-9);",
+          "  pm.environment.set('associateId', '11' + suffix);",
+          "  pm.environment.set('secondAssociateId', '22' + suffix);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Agendas",
+      "item": [
+        {
+          "name": "01 - Criar pauta",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Pauta {{$timestamp}}\",\"description\":\"Criada pela collection\"}"
+            },
+            "url": "{{baseUrl}}/api/v1/agendas"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {"exec": [
+              "pm.test('status 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.expect(body.id).to.be.a('string');",
+              "pm.environment.set('agendaId', body.id);",
+              "pm.expect(pm.response.headers.get('Location')).to.include(body.id);"
+            ]}
+          }]
+        },
+        {
+          "name": "02 - Listar pautas",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/agendas"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "pm.expect(pm.response.json()).to.be.an('array');"
+          ]}}]
+        },
+        {
+          "name": "03 - Consultar pauta",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "pm.expect(pm.response.json().id).to.eql(pm.environment.get('agendaId'));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "02 - Sessions",
+      "item": [
+        {
+          "name": "01 - Abrir sessão padrão",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/sessions"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 201', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.expect(body.requestedDurationSeconds).to.eql(60);",
+            "pm.environment.set('sessionId', body.id);"
+          ]}}]
+        },
+        {
+          "name": "02 - Consultar sessão atual",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/sessions/current"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "pm.expect(pm.response.json().id).to.eql(pm.environment.get('sessionId'));"
+          ]}}]
+        },
+        {
+          "name": "03 - Rejeitar segunda sessão",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"durationMinutes\":5}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/sessions"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 409', () => pm.response.to.have.status(409));",
+            "pm.expect(pm.response.json().code).to.eql('SESSION_ALREADY_EXISTS');"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "03 - Mobile flow",
+      "item": [
+        {
+          "name": "01 - Listar pautas mobile",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/mobile/agendas"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "pm.expect(pm.response.json().tipo).to.eql('SELECAO');"
+          ]}}]
+        },
+        {
+          "name": "02 - Identificar associado",
+          "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/mobile/agendas/{{agendaId}}/identify"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "pm.expect(pm.response.json().tipo).to.eql('FORMULARIO');"
+          ]}}]
+        },
+        {
+          "name": "03 - Obter opções de voto",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"associateId\":\"{{associateId}}\"}"},
+            "url": "{{baseUrl}}/api/v1/mobile/agendas/{{agendaId}}/vote-options"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.expect(body.tipo).to.eql('SELECAO');",
+            "pm.expect(body.itens.map(i => i.body.choice)).to.eql(['SIM', 'NAO']);"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "04 - Votes",
+      "item": [
+        {
+          "name": "01 - Registrar voto SIM",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"associateId\":\"{{associateId}}\",\"choice\":\"SIM\"}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/votes"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 201', () => pm.response.to.have.status(201));",
+            "pm.expect(pm.response.json().tipo).to.eql('FORMULARIO');"
+          ]}}]
+        },
+        {
+          "name": "02 - Registrar voto NAO de outro associado",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"associateId\":\"{{secondAssociateId}}\",\"choice\":\"NAO\"}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/votes"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 201', () => pm.response.to.have.status(201));"
+          ]}}]
+        },
+        {
+          "name": "03 - Rejeitar voto duplicado",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"associateId\":\"{{associateId}}\",\"choice\":\"NAO\"}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/votes"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 409', () => pm.response.to.have.status(409));",
+            "pm.expect(pm.response.json().code).to.eql('DUPLICATE_VOTE');"
+          ]}}]
+        },
+        {
+          "name": "04 - Rejeitar CPF malformado",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"associateId\":\"123\",\"choice\":\"SIM\"}"},
+            "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/votes"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 400', () => pm.response.to.have.status(400));",
+            "pm.expect(pm.response.json().code).to.eql('VALIDATION_ERROR');"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "05 - Results",
+      "item": [
+        {
+          "name": "01 - Consultar resultado",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/agendas/{{agendaId}}/results"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('status 200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.expect(body.totalVotes).to.eql(2);",
+            "pm.expect(body.outcome).to.be.oneOf(['IN_PROGRESS', 'TIED']);"
+          ]}}]
+        }
+      ]
+    }
+  ]
+}

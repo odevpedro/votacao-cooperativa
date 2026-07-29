@@ -1,0 +1,13 @@
+{
+  "id": "72db3a20-8855-4bfa-a870-cloud00000001",
+  "name": "Cooperative Voting - Cloud",
+  "values": [
+    {"key": "baseUrl", "value": "", "enabled": true},
+    {"key": "agendaId", "value": "", "enabled": true},
+    {"key": "sessionId", "value": "", "enabled": true},
+    {"key": "associateId", "value": "", "enabled": true},
+    {"key": "secondAssociateId", "value": "", "enabled": true}
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_using": "Codex"
+}
