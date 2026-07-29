@@ -36,13 +36,15 @@ public class VoteService {
 
   @Transactional
   public Vote register(UUID agendaId, String associateId, VoteChoice choice) {
+    String normalizedAssociateId = normalizeAssociateId(associateId);
     var session = sessionService.requireOpen(agendaId);
-    eligibilityService.requireEligible(associateId);
-    if (repository.existsBySessionIdAndAssociateId(session.getId(), associateId)) {
+    eligibilityService.requireEligible(normalizedAssociateId);
+    if (repository.existsBySessionIdAndAssociateId(session.getId(), normalizedAssociateId)) {
       LOGGER.debug("event=vote.duplicate agendaId={} sessionId={}", agendaId, session.getId());
       throw new DuplicateVoteException();
     }
-    var vote = new Vote(UUID.randomUUID(), session, associateId, choice, Instant.now(clock));
+    var vote =
+        new Vote(UUID.randomUUID(), session, normalizedAssociateId, choice, Instant.now(clock));
     try {
       var created = repository.saveAndFlush(vote);
       LOGGER.debug(
@@ -80,5 +82,13 @@ public class VoteService {
       return VoteOutcome.TIED;
     }
     return yes > no ? VoteOutcome.APPROVED : VoteOutcome.REJECTED;
+  }
+
+  private String normalizeAssociateId(String associateId) {
+    if (associateId == null || associateId.isBlank() || associateId.trim().length() > 64) {
+      throw new IllegalArgumentException(
+          "O identificador do associado deve conter de 1 a 64 caracteres.");
+    }
+    return associateId.trim();
   }
 }

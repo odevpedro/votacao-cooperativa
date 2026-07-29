@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(
     name = "integration.voter-eligibility.enabled",
     havingValue = "false",
-    matchIfMissing = false)
+    matchIfMissing = true)
 public class DisabledVoterEligibilityGateway implements VoterEligibilityGateway {
   @Override
   public EligibilityResult check(String cpf) {

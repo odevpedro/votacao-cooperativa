@@ -28,7 +28,7 @@ app:
 
 integration:
   voter-eligibility:
-    enabled: ${VOTER_ELIGIBILITY_ENABLED:true}
+    enabled: ${VOTER_ELIGIBILITY_ENABLED:false}
     base-url: ${VOTER_ELIGIBILITY_BASE_URL:https://user-info.herokuapp.com}
     connect-timeout: ${VOTER_ELIGIBILITY_CONNECT_TIMEOUT:2s}
     read-timeout: ${VOTER_ELIGIBILITY_READ_TIMEOUT:3s}

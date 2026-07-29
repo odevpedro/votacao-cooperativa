@@ -82,14 +82,31 @@ class CooperativeVotingIntegrationTest {
     mvc.perform(get(ApiRoutes.Mobile.AGENDAS))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.tipo").value("SELECAO"))
+        .andExpect(jsonPath("$.titulo").value("Pautas disponíveis"))
         .andExpect(
             jsonPath("$.itens[0].url")
-                .value("https://test.example/api/v1/mobile/agendas/" + agendaId + "/identify"));
+                .value("https://test.example/api/v1/mobile/agendas/" + agendaId + "/identify"))
+        .andExpect(jsonPath("$.itens[0].texto").value("Orçamento anual"))
+        .andExpect(jsonPath("$.itens[0].body.agendaId").value(agendaId.toString()));
 
     mvc.perform(post(ApiRoutes.Mobile.IDENTIFY, agendaId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.tipo").value("FORMULARIO"))
-        .andExpect(jsonPath("$.itens[1].tipo").value("INPUT_TEXTO"));
+        .andExpect(jsonPath("$.titulo").value("Identificação do associado"))
+        .andExpect(jsonPath("$.itens[0].tipo").value("TEXTO"))
+        .andExpect(jsonPath("$.itens[0].texto").value("Informe seu CPF para continuar."))
+        .andExpect(jsonPath("$.itens[1].tipo").value("INPUT_TEXTO"))
+        .andExpect(jsonPath("$.itens[1].id").value("associateId"))
+        .andExpect(jsonPath("$.itens[1].titulo").value("CPF"))
+        .andExpect(jsonPath("$.itens[1].valor").value(""))
+        .andExpect(jsonPath("$.botaoOk.texto").value("Continuar"))
+        .andExpect(
+            jsonPath("$.botaoOk.url")
+                .value("https://test.example/api/v1/mobile/agendas/" + agendaId + "/vote-options"))
+        .andExpect(jsonPath("$.botaoOk.body.agendaId").value(agendaId.toString()))
+        .andExpect(jsonPath("$.botaoCancelar.texto").value("Cancelar"))
+        .andExpect(
+            jsonPath("$.botaoCancelar.url").value("https://test.example/api/v1/mobile/agendas"));
 
     mvc.perform(
             post(ApiRoutes.Mobile.VOTE_OPTIONS, agendaId)
@@ -100,7 +117,13 @@ class CooperativeVotingIntegrationTest {
                                         """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.tipo").value("SELECAO"))
+        .andExpect(jsonPath("$.titulo").value("Escolha seu voto"))
+        .andExpect(
+            jsonPath("$.itens[0].url")
+                .value("https://test.example/api/v1/agendas/" + agendaId + "/votes"))
+        .andExpect(jsonPath("$.itens[0].body.associateId").value("12345678901"))
         .andExpect(jsonPath("$.itens[0].body.choice").value("SIM"))
+        .andExpect(jsonPath("$.itens[1].body.associateId").value("12345678901"))
         .andExpect(jsonPath("$.itens[1].body.choice").value("NAO"));
 
     mvc.perform(
@@ -108,7 +131,7 @@ class CooperativeVotingIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                                        {"associateId":"12345678901","choice":"SIM"}
+                                        {"associateId":"member-42","choice":"SIM"}
                                         """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.tipo").value("FORMULARIO"))
@@ -125,26 +148,26 @@ class CooperativeVotingIntegrationTest {
   void returnsProblemDetailsForValidationAndDuplicateVote() throws Exception {
     UUID agendaId = createAgenda("Pauta");
     openSession(agendaId);
+    String tooLongAssociateId = "x".repeat(65);
 
     mvc.perform(
             post(ApiRoutes.Agendas.VOTES, agendaId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    """
-                                        {"associateId":"123","choice":"SIM"}
-                                        """))
+                    objectMapper.writeValueAsString(
+                        java.util.Map.of("associateId", tooLongAssociateId, "choice", "SIM"))))
         .andExpect(status().isBadRequest())
         .andExpect(header().exists("X-Correlation-Id"))
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(jsonPath("$.correlationId").isNotEmpty());
 
-    vote(agendaId, "12345678901");
+    vote(agendaId, "member-42");
     mvc.perform(
             post(ApiRoutes.Agendas.VOTES, agendaId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                                        {"associateId":"12345678901","choice":"NAO"}
+                                        {"associateId":"member-42","choice":"NAO"}
                                         """))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("DUPLICATE_VOTE"))
@@ -176,6 +199,45 @@ class CooperativeVotingIntegrationTest {
   }
 
   @Test
+  void rejectsVotesAfterClosingAndReturnsFinalResult() throws Exception {
+    UUID agendaId = createAgenda("Resultado final");
+    openSession(agendaId);
+
+    vote(agendaId, "member-yes");
+    vote(agendaId, "member-no", "NAO");
+    jdbc.update(
+        """
+        UPDATE voting_sessions
+        SET opened_at = CURRENT_TIMESTAMP - INTERVAL '2 minutes',
+            closes_at = CURRENT_TIMESTAMP - INTERVAL '1 second'
+        WHERE agenda_id = ?
+        """,
+        agendaId);
+
+    mvc.perform(
+            post(ApiRoutes.Agendas.VOTES, agendaId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        java.util.Map.of("associateId", "member-after-close", "choice", "SIM"))))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("SESSION_NOT_OPEN"))
+        .andExpect(jsonPath("$.status").value(409));
+
+    mvc.perform(get(ApiRoutes.Agendas.CURRENT_SESSION, agendaId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("CLOSED"));
+
+    mvc.perform(get(ApiRoutes.Agendas.RESULTS, agendaId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sessionStatus").value("CLOSED"))
+        .andExpect(jsonPath("$.yesVotes").value(1))
+        .andExpect(jsonPath("$.noVotes").value(1))
+        .andExpect(jsonPath("$.totalVotes").value(2))
+        .andExpect(jsonPath("$.outcome").value("TIED"));
+  }
+
+  @Test
   void acceptsExactlyOneOfConcurrentDuplicateVotes() throws Exception {
     var agenda = agendaService.create("Concorrência", null);
     sessionService.open(agenda.getId(), Duration.ofMinutes(5));
@@ -191,7 +253,8 @@ class CooperativeVotingIntegrationTest {
                           () -> {
                             barrier.await();
                             try {
-                              voteService.register(agenda.getId(), "12345678901", VoteChoice.SIM);
+                              voteService.register(
+                                  agenda.getId(), "member-concurrent", VoteChoice.SIM);
                               return true;
                             } catch (DuplicateVoteException exception) {
                               return false;
@@ -246,12 +309,16 @@ class CooperativeVotingIntegrationTest {
   }
 
   private void vote(UUID agendaId, String associateId) throws Exception {
+    vote(agendaId, associateId, "SIM");
+  }
+
+  private void vote(UUID agendaId, String associateId, String choice) throws Exception {
     mvc.perform(
             post(ApiRoutes.Agendas.VOTES, agendaId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        java.util.Map.of("associateId", associateId, "choice", "SIM"))))
+                        java.util.Map.of("associateId", associateId, "choice", choice))))
         .andExpect(status().isCreated());
   }
 }

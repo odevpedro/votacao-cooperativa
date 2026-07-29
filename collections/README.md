@@ -16,8 +16,7 @@ npx newman run collections/cooperative-voting.postman_collection.json \
   -e collections/environments/local.json
 ```
 
-A collection cria e salva `agendaId`/`sessionId`, gera CPFs únicos a cada execução
-e valida status e propriedades essenciais. O caso de voto encerrado requer aguardar
-o fechamento da sessão e está documentado nos exemplos/OpenAPI; o fluxo
-automatizado cobre validação e duplicidade sem adicionar espera de um minuto ao
-pipeline.
+A collection cria e salva `agendaId`/`sessionId`, gera um CPF para o fluxo mobile e
+um identificador genérico para a API de domínio, além de validar status e o contrato
+das telas server-driven. O cenário de sessão encerrada é automatizado na suíte de
+integração Java sem adicionar uma espera de um minuto ao pipeline.

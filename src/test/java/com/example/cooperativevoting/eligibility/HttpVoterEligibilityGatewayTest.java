@@ -46,6 +46,26 @@ class HttpVoterEligibilityGatewayTest {
   }
 
   @Test
+  void rejectsMalformedCpfWithoutCallingRemoteService() {
+    assertThat(gateway.check("member-42")).isEqualTo(EligibilityResult.INVALID_CPF);
+    assertThat(server.getAllServeEvents()).isEmpty();
+  }
+
+  @Test
+  void mapsMissingHerokuApplicationToUnavailable() {
+    server.resetAll();
+    server.stubFor(
+        get(urlEqualTo("/users/12345678901"))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withHeader("Content-Type", "text/html; charset=utf-8")
+                    .withBody("<title>No such app</title>")));
+
+    assertThat(gateway.check("12345678901")).isEqualTo(EligibilityResult.SERVICE_UNAVAILABLE);
+  }
+
+  @Test
   void mapsServerErrorsInvalidResponsesAndTimeoutsToUnavailable() {
     stub(500, "");
     assertThat(gateway.check("12345678901")).isEqualTo(EligibilityResult.SERVICE_UNAVAILABLE);

@@ -20,13 +20,13 @@ echo
 
 curl -fsS -X POST "${BASE_URL}/api/v1/agendas/${AGENDA_ID}/votes" \
   -H 'Content-Type: application/json' \
-  -d '{"associateId":"12345678901","choice":"SIM"}'
+  -d '{"associateId":"member-demo","choice":"SIM"}'
 echo
 
 HTTP_CODE="$(curl -sS -o /tmp/cooperative-voting-duplicate.json -w '%{http_code}' \
   -X POST "${BASE_URL}/api/v1/agendas/${AGENDA_ID}/votes" \
   -H 'Content-Type: application/json' \
-  -d '{"associateId":"12345678901","choice":"NAO"}')"
+  -d '{"associateId":"member-demo","choice":"NAO"}')"
 test "${HTTP_CODE}" = "409"
 
 curl -fsS "${BASE_URL}/api/v1/agendas/${AGENDA_ID}/results"

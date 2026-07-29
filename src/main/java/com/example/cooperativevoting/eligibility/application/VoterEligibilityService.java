@@ -10,11 +10,8 @@ public class VoterEligibilityService {
     this.gateway = gateway;
   }
 
-  public void requireEligible(String cpf) {
-    if (cpf == null || !cpf.matches("\\d{11}")) {
-      throw new InvalidCpfException();
-    }
-    switch (gateway.check(cpf)) {
+  public void requireEligible(String associateId) {
+    switch (gateway.check(associateId)) {
       case ABLE_TO_VOTE -> {
         return;
       }

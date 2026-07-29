@@ -119,7 +119,7 @@ paths:
         content:
           application/json:
             schema: {$ref: "#/components/schemas/RegisterVoteRequest"}
-            example: {associateId: "12345678901", choice: SIM}
+            example: {associateId: "member-42", choice: SIM}
       responses:
         "201":
           description: Voto persistido e tela mobile de confirmação.
@@ -268,7 +268,7 @@ components:
       type: object
       required: [associateId, choice]
       properties:
-        associateId: {type: string, pattern: '^\d{11}$', example: "12345678901"}
+        associateId: {type: string, minLength: 1, maxLength: 64, example: "member-42"}
         choice: {type: string, enum: [SIM, NAO]}
     VotingResult:
       type: object

@@ -6,7 +6,7 @@ Swagger local: `http://localhost:8080/swagger-ui/index.html`
 
 Health local: `http://localhost:8080/actuator/health`
 
-Repositório remoto: **não configurado**
+Repositório remoto: [github.com/odevpedro/voting-api](https://github.com/odevpedro/voting-api)
 
 ## Visão geral
 
@@ -51,9 +51,10 @@ Os trade-offs estão detalhados em `docs/architecture.md` e nos ADRs.
 Pré-requisitos: Docker e Docker Compose.
 
 ```bash
-cp .env.example .env
 docker compose up --build
 ```
+
+Nenhum arquivo `.env` é necessário: o Compose já possui valores locais seguros.
 
 Para manter apenas o banco no Docker:
 
@@ -62,7 +63,8 @@ docker compose up -d postgres
 SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
 ```
 
-O profile `local` desabilita a integração externa por padrão. O schema é criado
+A integração externa fica desabilitada por padrão em todos os profiles e pode ser
+habilitada explicitamente por variável de ambiente. O schema é criado
 automaticamente pelo Flyway.
 
 ## Exemplos rápidos
@@ -82,7 +84,7 @@ curl -i -X POST http://localhost:8080/api/v1/agendas/AGENDA_ID/sessions \
 ```bash
 curl -i -X POST http://localhost:8080/api/v1/agendas/AGENDA_ID/votes \
   -H 'Content-Type: application/json' \
-  -d '{"associateId":"12345678901","choice":"SIM"}'
+  -d '{"associateId":"member-42","choice":"SIM"}'
 ```
 
 O fluxo completo reproduzível está em `scripts/demo.sh`.
@@ -109,8 +111,9 @@ O fluxo completo reproduzível está em `scripts/demo.sh`.
 ```
 
 A suíte contém testes unitários, WireMock e integração/API com PostgreSQL
-Testcontainers, inclusive concorrência de voto duplicado. JaCoCo gera o relatório
-em `target/site/jacoco`; Spotless roda no `verify`.
+Testcontainers. Ela cobre concorrência de voto duplicado, sessão encerrada, empate e
+o contrato JSON mobile. JaCoCo gera o relatório em `target/site/jacoco`; Spotless
+roda no `verify`.
 
 Em Docker 29, cuja API mínima é 1.44:
 
@@ -118,7 +121,8 @@ Em Docker 29, cuja API mínima é 1.44:
 ./mvnw -Dapi.version=1.44 verify
 ```
 
-O cenário k6 está em `performance/voting.js`.
+O cenário k6 e os resultados locais medidos estão em
+[`docs/performance-tests.md`](docs/performance-tests.md).
 
 ## Variáveis
 
@@ -130,7 +134,7 @@ O cenário k6 está em `performance/voting.js`.
 | `SPRING_DATASOURCE_USERNAME` | sim | `cooperative` |
 | `SPRING_DATASOURCE_PASSWORD` | sim | `cooperative` |
 | `PUBLIC_BASE_URL` | sim | `http://localhost:8080` |
-| `VOTER_ELIGIBILITY_ENABLED` | não | `false` no profile local |
+| `VOTER_ELIGIBILITY_ENABLED` | não | `false` |
 | `VOTER_ELIGIBILITY_BASE_URL` | quando habilitada | serviço informado no plano |
 | `VOTER_ELIGIBILITY_CONNECT_TIMEOUT` | não | `2s` |
 | `VOTER_ELIGIBILITY_READ_TIMEOUT` | não | `3s` |
@@ -138,17 +142,20 @@ O cenário k6 está em `performance/voting.js`.
 
 ## Elegibilidade
 
-Com a integração habilitada, `ABLE_TO_VOTE` permite o voto,
-`UNABLE_TO_VOTE` e CPF inválido retornam `422`, e timeout/5xx/resposta inválida
-retornam `503`. Não há retry e nenhum CPF completo é escrito pelos logs da
-aplicação. Com a integração desabilitada, CPFs sintaticamente válidos (11
-dígitos) são aceitos para desenvolvimento e carga.
+Com a integração habilitada, o identificador precisa ser um CPF com 11 dígitos:
+`ABLE_TO_VOTE` permite o voto, `UNABLE_TO_VOTE` e CPF inválido retornam `422`, e
+timeout/5xx/resposta inválida ou aplicação remota indisponível retornam `503`. Não
+há retry e nenhum CPF completo é escrito pelos logs da aplicação.
+
+Com a integração desabilitada, a API de domínio aceita identificadores de associado
+com 1 a 64 caracteres. O fluxo mobile continua solicitando CPF.
 
 ## Limitações e próximos passos
 
 - publicar no Render com PostgreSQL Neon e preencher as URLs do início;
 - executar o smoke test cloud, validar persistência após redeploy e registrar data/tag;
-- medir k6 no ambiente escolhido e preencher `docs/performance-tests.md`;
-- a elegibilidade externa do enunciado pode mudar ou deixar de existir;
+- repetir a medição k6 no ambiente cloud escolhido;
+- substituir a URL de elegibilidade do enunciado antes de habilitar a integração:
+  a aplicação Heroku informada atualmente responde `No such app`;
 - o plano gratuito de cloud pode apresentar cold start e não representa produção;
 - não há autenticação por decisão explícita de escopo.

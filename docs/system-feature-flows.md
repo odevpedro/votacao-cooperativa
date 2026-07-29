@@ -57,9 +57,11 @@ sequenceDiagram
 
 ## 8–10. Registrar ou rejeitar voto
 
-`POST /api/v1/agendas/{id}/votes` busca a sessão e calcula o estado com o relógio.
-Se aberta, verifica elegibilidade e duplicidade, insere dentro de transação e
-retorna `201` com tela `FORMULARIO` de confirmação. Sessão inexistente, futura ou
+`POST /api/v1/agendas/{id}/votes` aceita um identificador de associado com 1 a 64
+caracteres, busca a sessão e calcula o estado com o relógio. Se aberta, verifica
+elegibilidade e duplicidade, insere dentro de transação e retorna `201` com tela
+`FORMULARIO` de confirmação. Com a integração externa habilitada, o identificador
+deve ser um CPF de 11 dígitos. Sessão inexistente, futura ou
 encerrada retorna `409`.
 
 Para duplicidade, a consulta antecipada gera erro amigável; sob corrida, o
@@ -87,9 +89,10 @@ sessão ausente retorna `409`.
 
 ## 12. Indisponibilidade externa
 
-Timeout, 5xx, erro de transporte ou payload desconhecido são normalizados como
-`SERVICE_UNAVAILABLE`, registrados sem CPF e devolvidos como `503
-ELIGIBILITY_UNAVAILABLE`. A operação não persiste voto e não libera o associado
+Timeout, 5xx, erro de transporte, payload desconhecido ou uma página HTML indicando
+aplicação remota ausente são normalizados como `SERVICE_UNAVAILABLE`, registrados
+sem CPF e devolvidos como `503 ELIGIBILITY_UNAVAILABLE`. A operação não persiste
+voto e não libera o associado
 silenciosamente.
 
 Todos os erros incluem `ProblemDetail`, timestamp, código e `correlationId`.

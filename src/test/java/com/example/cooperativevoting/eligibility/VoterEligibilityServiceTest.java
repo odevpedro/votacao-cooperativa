@@ -39,8 +39,9 @@ class VoterEligibilityServiceTest {
   }
 
   @Test
-  void rejectsMalformedCpfWithoutCallingRemoteService() {
-    assertThatThrownBy(() -> service.requireEligible("123"))
-        .isInstanceOf(InvalidCpfException.class);
+  void acceptsGenericIdentifierWhenGatewayAllowsIt() {
+    when(gateway.check("member-42")).thenReturn(EligibilityResult.ABLE_TO_VOTE);
+
+    assertThatCode(() -> service.requireEligible("member-42")).doesNotThrowAnyException();
   }
 }
