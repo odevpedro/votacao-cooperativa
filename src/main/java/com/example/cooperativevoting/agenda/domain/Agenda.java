@@ -6,9 +6,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "agendas")
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Agenda {
   @Id private UUID id;
 
@@ -20,29 +26,4 @@ public class Agenda {
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
-
-  protected Agenda() {}
-
-  public Agenda(UUID id, String title, String description, Instant createdAt) {
-    this.id = id;
-    this.title = title;
-    this.description = description;
-    this.createdAt = createdAt;
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
 }

@@ -1,9 +1,7 @@
 package com.example.cooperativevoting.vote.api;
 
-import static com.example.cooperativevoting.mobileui.model.MobileScreenModels.FormScreen;
-import static com.example.cooperativevoting.vote.api.VoteApiModels.RegisterVoteRequest;
-
 import com.example.cooperativevoting.mobileui.application.MobileScreenService;
+import com.example.cooperativevoting.mobileui.model.FormScreen;
 import com.example.cooperativevoting.shared.api.ApiRoutes;
 import com.example.cooperativevoting.vote.application.VoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;

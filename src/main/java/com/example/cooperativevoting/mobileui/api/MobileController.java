@@ -1,10 +1,8 @@
 package com.example.cooperativevoting.mobileui.api;
 
-import static com.example.cooperativevoting.mobileui.api.MobileApiModels.VoteOptionsRequest;
-import static com.example.cooperativevoting.mobileui.model.MobileScreenModels.FormScreen;
-import static com.example.cooperativevoting.mobileui.model.MobileScreenModels.SelectionScreen;
-
 import com.example.cooperativevoting.mobileui.application.MobileScreenService;
+import com.example.cooperativevoting.mobileui.model.FormScreen;
+import com.example.cooperativevoting.mobileui.model.SelectionScreen;
 import com.example.cooperativevoting.shared.api.ApiRoutes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

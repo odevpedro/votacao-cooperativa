@@ -24,8 +24,7 @@ public class AgendaService {
 
   @Transactional
   public Agenda create(String title, String description) {
-    var agenda =
-        new Agenda(UUID.randomUUID(), title.trim(), normalize(description), Instant.now(clock));
+    var agenda = new Agenda(UUID.randomUUID(), title.trim(), normalize(description), Instant.now(clock));
     var created = repository.save(agenda);
     LOGGER.info("event=agenda.created agendaId={}", created.getId());
     return created;

@@ -12,9 +12,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "votes")
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Vote {
   @Id private UUID id;
 
@@ -31,31 +37,4 @@ public class Vote {
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
-
-  protected Vote() {}
-
-  public Vote(
-      UUID id, VotingSession session, String associateId, VoteChoice choice, Instant createdAt) {
-    this.id = id;
-    this.session = session;
-    this.associateId = associateId;
-    this.choice = choice;
-    this.createdAt = createdAt;
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public VotingSession getSession() {
-    return session;
-  }
-
-  public VoteChoice getChoice() {
-    return choice;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
 }

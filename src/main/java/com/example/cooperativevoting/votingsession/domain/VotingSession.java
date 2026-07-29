@@ -10,9 +10,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "voting_sessions")
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class VotingSession {
   @Id private UUID id;
 
@@ -31,8 +35,6 @@ public class VotingSession {
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
-
-  protected VotingSession() {}
 
   public VotingSession(
       UUID id,
@@ -57,29 +59,5 @@ public class VotingSession {
       return SessionStatus.NOT_STARTED;
     }
     return now.isBefore(closesAt) ? SessionStatus.OPEN : SessionStatus.CLOSED;
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public Agenda getAgenda() {
-    return agenda;
-  }
-
-  public Instant getOpenedAt() {
-    return openedAt;
-  }
-
-  public Instant getClosesAt() {
-    return closesAt;
-  }
-
-  public long getRequestedDurationSeconds() {
-    return requestedDurationSeconds;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
   }
 }

@@ -1,8 +1,5 @@
 package com.example.cooperativevoting.votingsession.api;
 
-import static com.example.cooperativevoting.votingsession.api.VotingSessionApiModels.OpenSessionRequest;
-import static com.example.cooperativevoting.votingsession.api.VotingSessionApiModels.VotingSessionResponse;
-
 import com.example.cooperativevoting.shared.api.ApiRoutes;
 import com.example.cooperativevoting.votingsession.application.VotingSessionService;
 import io.swagger.v3.oas.annotations.tags.Tag;

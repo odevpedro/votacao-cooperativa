@@ -1,8 +1,5 @@
 package com.example.cooperativevoting.agenda.api;
 
-import static com.example.cooperativevoting.agenda.api.AgendaApiModels.AgendaResponse;
-import static com.example.cooperativevoting.agenda.api.AgendaApiModels.CreateAgendaRequest;
-
 import com.example.cooperativevoting.agenda.application.AgendaService;
 import com.example.cooperativevoting.shared.api.ApiRoutes;
 import io.swagger.v3.oas.annotations.tags.Tag;
