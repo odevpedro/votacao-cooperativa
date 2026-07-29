@@ -1,0 +1,7 @@
+integration:
+  voter-eligibility:
+    enabled: ${VOTER_ELIGIBILITY_ENABLED:false}
+
+logging:
+  level:
+    com.example.cooperativevoting: DEBUG
