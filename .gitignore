@@ -2,7 +2,7 @@ target/
 .idea/
 .vscode/
 *.iml
-.env
+.env*
 *.log
 .DS_Store
 

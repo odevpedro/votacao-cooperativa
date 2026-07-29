@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: cooperative-voting
+    runtime: docker
+    branch: main
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: VOTER_ELIGIBILITY_ENABLED
+        value: "true"
+      - key: VOTER_ELIGIBILITY_BASE_URL
+        sync: false
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=70
