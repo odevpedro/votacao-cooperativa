@@ -1,10 +1,11 @@
 # Cooperative Voting
 
-Aplicação: **não publicada — requer conta Render e banco Neon**
+Aplicação publicada em: [cooperative-voting.onrender.com](https://cooperative-voting.onrender.com)
 
-Swagger local: `http://localhost:8080/swagger-ui/index.html`
-
-Health local: `http://localhost:8080/actuator/health`
+| Ambiente | Swagger | Health |
+|---|---|---|
+| Cloud | [swagger-ui.html](https://cooperative-voting.onrender.com/swagger-ui.html) | [/actuator/health](https://cooperative-voting.onrender.com/actuator/health) |
+| Local | `http://localhost:8080/swagger-ui/index.html` | `http://localhost:8080/actuator/health` |
 
 Repositório remoto: [github.com/odevpedro/voting-api](https://github.com/odevpedro/voting-api)
 
@@ -15,9 +16,8 @@ receber votos `SIM`/`NAO`, impedir voto duplicado e calcular resultados. A mesma
 aplicação expõe uma API REST de domínio e contratos JSON de apresentação para um
 cliente mobile externo.
 
-O projeto está funcional e testado localmente com PostgreSQL real. A publicação em
-nuvem não foi realizada porque exige contas e secrets do proprietário. O
-`Dockerfile`, `render.yaml` e o guia de deploy estão prontos para essa etapa.
+O projeto está publicado no Render (plano gratuito) com PostgreSQL Neon.
+O perfil `cloud` é ativado automaticamente via `render.yaml`.
 
 ## Documentação
 
@@ -69,20 +69,29 @@ automaticamente pelo Flyway.
 
 ## Exemplos rápidos
 
+Suba `BASE_URL` conforme o ambiente:
+
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/agendas \
+# local
+BASE_URL=http://localhost:8080
+# cloud
+BASE_URL=https://cooperative-voting.onrender.com
+```
+
+```bash
+curl -i -X POST "$BASE_URL/api/v1/agendas" \
   -H 'Content-Type: application/json' \
   -d '{"title":"Orçamento anual","description":"Aprovação do orçamento"}'
 ```
 
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/agendas/AGENDA_ID/sessions \
+curl -i -X POST "$BASE_URL/api/v1/agendas/AGENDA_ID/sessions" \
   -H 'Content-Type: application/json' \
   -d '{"durationMinutes":5}'
 ```
 
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/agendas/AGENDA_ID/votes \
+curl -i -X POST "$BASE_URL/api/v1/agendas/AGENDA_ID/votes" \
   -H 'Content-Type: application/json' \
   -d '{"associateId":"member-42","choice":"SIM"}'
 ```
@@ -152,8 +161,7 @@ com 1 a 64 caracteres. O fluxo mobile continua solicitando CPF.
 
 ## Limitações e próximos passos
 
-- publicar no Render com PostgreSQL Neon e preencher as URLs do início;
-- executar o smoke test cloud, validar persistência após redeploy e registrar data/tag;
+- validar persistência após redeploy e registrar data/tag da publicação;
 - repetir a medição k6 no ambiente cloud escolhido;
 - substituir a URL de elegibilidade do enunciado antes de habilitar a integração:
   a aplicação Heroku informada atualmente responde `No such app`;
