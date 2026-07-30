@@ -40,28 +40,33 @@ public class HttpVoterEligibilityGateway implements VoterEligibilityGateway {
     if (cpf == null || !cpf.matches("\\d{11}")) {
       return EligibilityResult.INVALID_CPF;
     }
+    long start = System.nanoTime();
     try {
       var response =
           restClient.get().uri("/users/{cpf}", cpf).retrieve().body(EligibilityResponse.class);
+      long elapsed = (System.nanoTime() - start) / 1_000_000;
+      LOGGER.debug("event=eligibility.success cpf={} elapsedMs={} status={}", cpf, elapsed, response);
       if (response == null || response.status() == null) {
-        return unavailable("invalid-response");
+        return unavailable("invalid-response", null);
       }
       try {
         return EligibilityResult.valueOf(response.status());
       } catch (IllegalArgumentException exception) {
-        return unavailable("unknown-status");
+        return unavailable("unknown-status", exception);
       }
     } catch (HttpClientErrorException.NotFound exception) {
+      long elapsed = (System.nanoTime() - start) / 1_000_000;
+      LOGGER.debug("event=eligibility.not-found cpf={} elapsedMs={}", cpf, elapsed);
       return isUpstreamApplicationMissing(exception)
-          ? unavailable("upstream-application-not-found")
+          ? unavailable("upstream-application-not-found", exception)
           : EligibilityResult.INVALID_CPF;
     } catch (HttpClientErrorException exception) {
       if (exception.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
         return EligibilityResult.INVALID_CPF;
       }
-      return unavailable("http-" + exception.getStatusCode().value());
+      return unavailable("http-error", exception);
     } catch (RestClientException | CancellationException exception) {
-      return unavailable(exception.getClass().getSimpleName());
+      return unavailable("connection-error", exception);
     }
   }
 
@@ -73,8 +78,12 @@ public class HttpVoterEligibilityGateway implements VoterEligibilityGateway {
         || body.contains("no-such-app");
   }
 
-  private EligibilityResult unavailable(String reason) {
-    LOGGER.warn("event=eligibility.unavailable reason={}", reason);
+  private EligibilityResult unavailable(String reason, Exception exception) {
+    if (exception != null) {
+      LOGGER.warn("event=eligibility.unavailable reason={}", reason, exception);
+    } else {
+      LOGGER.warn("event=eligibility.unavailable reason={}", reason);
+    }
     return EligibilityResult.SERVICE_UNAVAILABLE;
   }
 

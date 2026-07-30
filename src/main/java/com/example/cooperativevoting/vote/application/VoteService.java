@@ -6,11 +6,15 @@ import com.example.cooperativevoting.vote.domain.VoteChoice;
 import com.example.cooperativevoting.vote.infrastructure.VoteRepository;
 import com.example.cooperativevoting.votingsession.application.VotingSessionService;
 import com.example.cooperativevoting.votingsession.domain.SessionStatus;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,25 +41,45 @@ public class VoteService {
   @Transactional
   public Vote register(UUID agendaId, String associateId, VoteChoice choice) {
     String normalizedAssociateId = normalizeAssociateId(associateId);
-    var session = sessionService.requireOpen(agendaId);
-    eligibilityService.requireEligible(normalizedAssociateId);
-    if (repository.existsBySessionIdAndAssociateId(session.getId(), normalizedAssociateId)) {
-      LOGGER.debug("event=vote.duplicate agendaId={} sessionId={}", agendaId, session.getId());
-      throw new DuplicateVoteException();
-    }
-    var vote =
-        new Vote(UUID.randomUUID(), session, normalizedAssociateId, choice, Instant.now(clock));
+    String associateIdHash = sha256(normalizedAssociateId);
+    MDC.put("agendaId", agendaId.toString());
+    MDC.put("associateIdHash", associateIdHash);
     try {
-      var created = repository.saveAndFlush(vote);
-      LOGGER.debug(
-          "event=vote.accepted agendaId={} sessionId={} choice={}",
-          agendaId,
-          session.getId(),
-          choice);
-      return created;
-    } catch (DataIntegrityViolationException exception) {
-      LOGGER.debug("event=vote.duplicate agendaId={} sessionId={}", agendaId, session.getId());
-      throw new DuplicateVoteException();
+      var session = sessionService.requireOpen(agendaId);
+      MDC.put("sessionId", session.getId().toString());
+      eligibilityService.requireEligible(normalizedAssociateId);
+      if (repository.existsBySessionIdAndAssociateId(session.getId(), normalizedAssociateId)) {
+        LOGGER.debug(
+            "event=vote.duplicate agendaId={} sessionId={} associateIdHash={}",
+            agendaId,
+            session.getId(),
+            associateIdHash);
+        throw new DuplicateVoteException();
+      }
+      var vote =
+          new Vote(UUID.randomUUID(), session, normalizedAssociateId, choice, Instant.now(clock));
+      try {
+        var created = repository.saveAndFlush(vote);
+        LOGGER.info(
+            "event=vote.accepted agendaId={} sessionId={} choice={} associateIdHash={}",
+            agendaId,
+            session.getId(),
+            choice,
+            associateIdHash);
+        return created;
+      } catch (DataIntegrityViolationException exception) {
+        LOGGER.debug(
+            "event=vote.duplicate agendaId={} sessionId={} associateIdHash={}",
+            agendaId,
+            session.getId(),
+            associateIdHash,
+            exception);
+        throw new DuplicateVoteException();
+      }
+    } finally {
+      MDC.remove("agendaId");
+      MDC.remove("sessionId");
+      MDC.remove("associateIdHash");
     }
   }
 
@@ -90,5 +114,14 @@ public class VoteService {
           "O identificador do associado deve conter de 1 a 64 caracteres.");
     }
     return associateId.trim();
+  }
+
+  private String sha256(String value) {
+    try {
+      var digest = MessageDigest.getInstance("SHA-256");
+      return HexFormat.of().formatHex(digest.digest(value.getBytes()));
+    } catch (NoSuchAlgorithmException exception) {
+      throw new RuntimeException("SHA-256 not available", exception);
+    }
   }
 }

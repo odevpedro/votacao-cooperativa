@@ -13,10 +13,13 @@ import com.example.cooperativevoting.votingsession.application.VotingSessionServ
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MobileScreenService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MobileScreenService.class);
   private final AgendaService agendaService;
   private final VotingSessionService sessionService;
   private final VoterEligibilityService eligibilityService;
@@ -34,6 +37,7 @@ public class MobileScreenService {
   }
 
   public SelectionScreen agendas() {
+    LOGGER.debug("event=mobile.agendas-build");
     var items =
         agendaService.list().stream()
             .map(
@@ -47,6 +51,7 @@ public class MobileScreenService {
   }
 
   public FormScreen identify(UUID agendaId) {
+    LOGGER.debug("event=mobile.identify-build agendaId={}", agendaId);
     agendaService.get(agendaId);
     return new FormScreen(
         "Identificação do associado",
@@ -61,6 +66,7 @@ public class MobileScreenService {
   }
 
   public SelectionScreen voteOptions(UUID agendaId, String associateId) {
+    LOGGER.debug("event=mobile.vote-options-build agendaId={}", agendaId);
     agendaService.get(agendaId);
     sessionService.requireOpen(agendaId);
     eligibilityService.requireEligible(associateId);
@@ -74,6 +80,7 @@ public class MobileScreenService {
 
   public FormScreen confirmation(UUID agendaId) {
     var agenda = agendaService.get(agendaId);
+    LOGGER.debug("event=mobile.confirmation-build agendaId={}", agendaId);
     return new FormScreen(
         "Voto registrado",
         List.of(

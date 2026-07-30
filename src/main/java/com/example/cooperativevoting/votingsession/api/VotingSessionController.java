@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.Duration;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @Tag(name = "Sessões")
 public class VotingSessionController {
+  private static final Logger LOGGER = LoggerFactory.getLogger(VotingSessionController.class);
   private final VotingSessionService service;
 
   public VotingSessionController(VotingSessionService service) {
@@ -28,6 +31,7 @@ public class VotingSessionController {
   ResponseEntity<VotingSessionResponse> open(
       @PathVariable UUID agendaId,
       @Valid @RequestBody(required = false) OpenSessionRequest request) {
+    LOGGER.debug("event=session.open-request agendaId={}", agendaId);
     Duration duration =
         request == null || request.durationMinutes() == null
             ? null
@@ -41,6 +45,7 @@ public class VotingSessionController {
 
   @GetMapping(ApiRoutes.Agendas.CURRENT_SESSION)
   VotingSessionResponse current(@PathVariable UUID agendaId) {
+    LOGGER.debug("event=session.current-request agendaId={}", agendaId);
     var session = service.getByAgenda(agendaId);
     return VotingSessionResponse.from(session, service.status(session));
   }

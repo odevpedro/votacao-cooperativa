@@ -6,4 +6,4 @@ spring:
 
 logging:
   level:
-    com.example.cooperativevoting.vote: WARN
+    com.example.cooperativevoting.vote: DEBUG

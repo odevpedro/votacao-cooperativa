@@ -52,6 +52,8 @@ public class VotingSessionService {
           duration.toSeconds());
       return created;
     } catch (DataIntegrityViolationException exception) {
+      LOGGER.debug(
+          "event=session.race-condition agendaId={}", agendaId, exception);
       throw new SessionAlreadyExistsException();
     }
   }

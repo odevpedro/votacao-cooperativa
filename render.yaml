@@ -17,7 +17,7 @@ services:
       - key: PUBLIC_BASE_URL
         sync: false
       - key: VOTER_ELIGIBILITY_ENABLED
-        value: "true"
+        value: "false"
       - key: VOTER_ELIGIBILITY_BASE_URL
         sync: false
       - key: JAVA_TOOL_OPTIONS
