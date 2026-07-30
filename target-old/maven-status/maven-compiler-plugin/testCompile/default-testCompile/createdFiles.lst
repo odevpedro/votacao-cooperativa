@@ -1,6 +1,0 @@
-com/example/cooperativevoting/votingsession/VotingSessionServiceTest.class
-com/example/cooperativevoting/eligibility/VoterEligibilityServiceTest.class
-com/example/cooperativevoting/votingsession/VotingSessionTest.class
-com/example/cooperativevoting/vote/VoteServiceTest.class
-com/example/cooperativevoting/eligibility/HttpVoterEligibilityGatewayTest.class
-com/example/cooperativevoting/integration/CooperativeVotingIntegrationTest.class

@@ -1,7 +1,0 @@
-integration:
-  voter-eligibility:
-    enabled: false
-
-app:
-  public-base-url: https://test.example
-

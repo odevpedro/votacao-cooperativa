@@ -1,6 +1,0 @@
-/workspace/src/test/java/com/example/cooperativevoting/eligibility/HttpVoterEligibilityGatewayTest.java
-/workspace/src/test/java/com/example/cooperativevoting/eligibility/VoterEligibilityServiceTest.java
-/workspace/src/test/java/com/example/cooperativevoting/integration/CooperativeVotingIntegrationTest.java
-/workspace/src/test/java/com/example/cooperativevoting/vote/VoteServiceTest.java
-/workspace/src/test/java/com/example/cooperativevoting/votingsession/VotingSessionServiceTest.java
-/workspace/src/test/java/com/example/cooperativevoting/votingsession/VotingSessionTest.java
