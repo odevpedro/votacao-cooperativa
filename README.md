@@ -1,23 +1,19 @@
 # Cooperative Voting
 
-Aplicação publicada em: [cooperative-voting.onrender.com](https://cooperative-voting.onrender.com)
+Backend Java 21 + Spring Boot para votação cooperativa com pautas, sessões, votos
+e resultados — disponível como API REST de domínio e contratos JSON mobile.
+
+**Publicado em:** [cooperative-voting.onrender.com](https://cooperative-voting.onrender.com)
 
 | Ambiente | Swagger | Health |
 |---|---|---|
-| Cloud | [swagger-ui.html](https://cooperative-voting.onrender.com/swagger-ui.html) | [/actuator/health](https://cooperative-voting.onrender.com/actuator/health) |
+| Cloud | [cooperative-voting.onrender.com/swagger-ui.html](https://cooperative-voting.onrender.com/swagger-ui.html) | [/actuator/health](https://cooperative-voting.onrender.com/actuator/health) |
 | Local | `http://localhost:8080/swagger-ui/index.html` | `http://localhost:8080/actuator/health` |
 
-Repositório remoto: [github.com/odevpedro/voting-api](https://github.com/odevpedro/voting-api)
+Repositório: [github.com/odevpedro/votacao-cooperativa](https://github.com/odevpedro/votacao-cooperativa)
 
-## Visão geral
-
-Backend Java 21/Spring Boot para cadastrar pautas, abrir uma única sessão por pauta,
-receber votos `SIM`/`NAO`, impedir voto duplicado e calcular resultados. A mesma
-aplicação expõe uma API REST de domínio e contratos JSON de apresentação para um
-cliente mobile externo.
-
-O projeto está publicado no Render (plano gratuito) com PostgreSQL Neon.
-O perfil `cloud` é ativado automaticamente via `render.yaml`.
+Publicado no Render (plano gratuito) com PostgreSQL Neon. O perfil `cloud`
+é ativado automaticamente via `render.yaml` — sem necessidade de configuração manual.
 
 ## Documentação
 
@@ -32,44 +28,44 @@ O perfil `cloud` é ativado automaticamente via `render.yaml`.
 
 ## Decisões principais
 
-- monólito modular organizado por funcionalidade;
-- PostgreSQL + Flyway, com `ddl-auto=validate`;
-- uma sessão por pauta para remover ambiguidade;
-- sessão aberta quando `openedAt <= agora < closesAt`, sem scheduler;
-- unicidade de voto garantida em Java e por `UNIQUE (session_id, associate_id)`;
-- `Clock` injetado para testes temporais determinísticos;
-- agregação de resultados no banco, sem carregar votos;
-- integração de elegibilidade sem retry automático;
-- rotas públicas centralizadas em `ApiRoutes`;
-- erros RFC 9457 com `ProblemDetail` e `correlationId`;
-- nenhum frontend, autenticação, mensageria, cache ou microsserviço.
+- Monólito modular organizado por funcionalidade (agenda, sessão, voto, mobile)
+- PostgreSQL + Flyway com `ddl-auto=validate`
+- Uma sessão por pauta — elimina ambiguidade de qual sessão está ativa
+- Sessão aberta enquanto `openedAt <= now < closesAt`, sem scheduler
+- Unicidade de voto garantida em Java e por constraints `UNIQUE` no banco
+- `Clock` injetado para testes temporais determinísticos
+- Agregação de resultados no banco (sem carregar votos em memória)
+- Integração de elegibilidade sem retry automático
+- Rotas centralizadas em `ApiRoutes` — um único ponto de verdade
+- Erros seguem RFC 9457 com `ProblemDetail` e `correlationId` para rastreabilidade
+- Sem frontend, autenticação, mensageria, cache ou microsserviços
+- Logs estruturados em JSON (Logstash) com correlationId em todas as respostas
+- CPF nunca é logado — apenas hash SHA-256 para auditoria (LGPD)
 
-Os trade-offs estão detalhados em `docs/architecture.md` e nos ADRs.
+Os trade-offs estão detalhados em [`docs/architecture.md`](docs/architecture.md) e nos ADRs.
 
-## Executar
+## Executar localmente
 
-Pré-requisitos: Docker e Docker Compose.
+Pré-requisitos: Docker, Docker Compose e Java 21+.
 
 ```bash
 docker compose up --build
 ```
 
-Nenhum arquivo `.env` é necessário: o Compose já possui valores locais seguros.
+O Compose já contém valores seguros para desenvolvimento — nenhum `.env` necessário.
+A integração de elegibilidade vem desabilitada por padrão. O schema é criado
+automaticamente pelo Flyway.
 
-Para manter apenas o banco no Docker:
+Para rodar a aplicação fora do container (apenas banco no Docker):
 
 ```bash
 docker compose up -d postgres
 SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
 ```
 
-A integração externa fica desabilitada por padrão em todos os profiles e pode ser
-habilitada explicitamente por variável de ambiente. O schema é criado
-automaticamente pelo Flyway.
-
 ## Exemplos rápidos
 
-Suba `BASE_URL` conforme o ambiente:
+Defina `BASE_URL` conforme o ambiente de destino:
 
 ```bash
 # local
@@ -96,7 +92,7 @@ curl -i -X POST "$BASE_URL/api/v1/agendas/AGENDA_ID/votes" \
   -d '{"associateId":"member-42","choice":"SIM"}'
 ```
 
-O fluxo completo reproduzível está em `scripts/demo.sh`.
+O fluxo completo reproduzível está em [`scripts/demo.sh`](scripts/demo.sh).
 
 ## Endpoints
 
@@ -109,7 +105,7 @@ O fluxo completo reproduzível está em `scripts/demo.sh`.
 | GET | `/api/v1/agendas/{agendaId}/sessions/current` | consulta sessão |
 | POST | `/api/v1/agendas/{agendaId}/votes` | registra voto |
 | GET | `/api/v1/agendas/{agendaId}/results` | consulta resultado |
-| GET | `/api/v1/mobile/agendas` | tela de pautas |
+| GET | `/api/v1/mobile/agendas` | lista pautas (contrato mobile) |
 | POST | `/api/v1/mobile/agendas/{agendaId}/identify` | tela de identificação |
 | POST | `/api/v1/mobile/agendas/{agendaId}/vote-options` | opções de voto |
 
@@ -119,19 +115,20 @@ O fluxo completo reproduzível está em `scripts/demo.sh`.
 ./mvnw verify
 ```
 
-A suíte contém testes unitários, WireMock e integração/API com PostgreSQL
-Testcontainers. Ela cobre concorrência de voto duplicado, sessão encerrada, empate e
-o contrato JSON mobile. JaCoCo gera o relatório em `target/site/jacoco`; Spotless
-roda no `verify`.
+A suíte contempla:
+- **Testes unitários** (JUnit 5 + Mockito) para serviços e handlers de erro
+- **WireMock** para simular o serviço externo de elegibilidade
+- **Integração com PostgreSQL real** via Testcontainers
+- **Cobertura JaCoCo** em `target/site/jacoco`
+- **Verificação de formatação** com Spotless (Google Java Format)
 
-Em Docker 29, cuja API mínima é 1.44:
+Em ambientes com Docker 29 (API mínima 1.44):
 
 ```bash
 ./mvnw -Dapi.version=1.44 verify
 ```
 
-O cenário k6 e os resultados locais medidos estão em
-[`docs/performance-tests.md`](docs/performance-tests.md).
+Cenários de performance com k6 em [`docs/performance-tests.md`](docs/performance-tests.md).
 
 ## Variáveis
 
@@ -151,19 +148,23 @@ O cenário k6 e os resultados locais medidos estão em
 
 ## Elegibilidade
 
-Com a integração habilitada, o identificador precisa ser um CPF com 11 dígitos:
-`ABLE_TO_VOTE` permite o voto, `UNABLE_TO_VOTE` e CPF inválido retornam `422`, e
-timeout/5xx/resposta inválida ou aplicação remota indisponível retornam `503`. Não
-há retry e nenhum CPF completo é escrito pelos logs da aplicação.
+A verificação de elegibilidade pode ser habilitada via `VOTER_ELIGIBILITY_ENABLED=true`.
 
-Com a integração desabilitada, a API de domínio aceita identificadores de associado
-com 1 a 64 caracteres. O fluxo mobile continua solicitando CPF.
+**Habilitada** — o identificador deve ser um CPF de 11 dígitos:
+- `ABLE_TO_VOTE` → voto permitido
+- `UNABLE_TO_VOTE` ou CPF inválido → `422 Unprocessable Entity`
+- Timeout, 5xx, resposta inválida ou serviço indisponível → `503 Service Unavailable`
+- Sem retry automático
+- CPF nunca é escrito nos logs — apenas hash SHA-256 para auditoria (LGPD)
+
+**Desabilitada** (padrão) — aceita identificadores de 1 a 64 caracteres.
+O fluxo mobile continua solicitando CPF, mas a validação é feita apenas no
+controller (formato livre).
 
 ## Limitações e próximos passos
 
-- validar persistência após redeploy e registrar data/tag da publicação;
-- repetir a medição k6 no ambiente cloud escolhido;
-- substituir a URL de elegibilidade do enunciado antes de habilitar a integração:
-  a aplicação Heroku informada atualmente responde `No such app`;
-- o plano gratuito de cloud pode apresentar cold start e não representa produção;
-- não há autenticação por decisão explícita de escopo.
+- Repetir a medição k6 no ambiente cloud e comparar com os resultados locais
+- Configurar URL de elegibilidade real antes de habilitar a integração (a URL do
+  enunciado — `user-info.herokuapp.com` — não está mais ativa)
+- O plano gratuito do Render pode apresentar cold start (~30s) após inatividade
+- Não há autenticação — decisão explícita de escopo
