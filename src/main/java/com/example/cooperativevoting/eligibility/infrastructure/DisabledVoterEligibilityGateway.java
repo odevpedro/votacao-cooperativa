@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
     havingValue = "false",
     matchIfMissing = true)
 public class DisabledVoterEligibilityGateway implements VoterEligibilityGateway {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DisabledVoterEligibilityGateway.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(DisabledVoterEligibilityGateway.class);
 
   @PostConstruct
   void logDisabled() {

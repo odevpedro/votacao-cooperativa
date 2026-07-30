@@ -45,7 +45,8 @@ public class HttpVoterEligibilityGateway implements VoterEligibilityGateway {
       var response =
           restClient.get().uri("/users/{cpf}", cpf).retrieve().body(EligibilityResponse.class);
       long elapsed = (System.nanoTime() - start) / 1_000_000;
-      LOGGER.debug("event=eligibility.success cpf={} elapsedMs={} status={}", cpf, elapsed, response);
+      LOGGER.debug(
+          "event=eligibility.success cpf={} elapsedMs={} status={}", cpf, elapsed, response);
       if (response == null || response.status() == null) {
         return unavailable("invalid-response", null);
       }

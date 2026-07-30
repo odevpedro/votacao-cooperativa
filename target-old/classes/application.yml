@@ -1,0 +1,63 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: cooperative-voting
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cooperative_voting}
+    username: ${SPRING_DATASOURCE_USERNAME:cooperative}
+    password: ${SPRING_DATASOURCE_PASSWORD:cooperative}
+  flyway:
+    enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+
+integration:
+  voter-eligibility:
+    enabled: ${VOTER_ELIGIBILITY_ENABLED:false}
+    base-url: ${VOTER_ELIGIBILITY_BASE_URL:https://user-info.herokuapp.com}
+    connect-timeout: ${VOTER_ELIGIBILITY_CONNECT_TIMEOUT:2s}
+    read-timeout: ${VOTER_ELIGIBILITY_READ_TIMEOUT:3s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  application:
+    name: Cooperative Voting
+    version: "0.0.1-SNAPSHOT"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF

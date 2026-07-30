@@ -1,12 +1,12 @@
 package com.example.cooperativevoting.mobileui.application;
 
 import com.example.cooperativevoting.agenda.application.AgendaService;
+import com.example.cooperativevoting.eligibility.application.VoterEligibilityService;
 import com.example.cooperativevoting.mobileui.model.Action;
 import com.example.cooperativevoting.mobileui.model.FormItem;
 import com.example.cooperativevoting.mobileui.model.FormScreen;
 import com.example.cooperativevoting.mobileui.model.SelectionItem;
 import com.example.cooperativevoting.mobileui.model.SelectionScreen;
-import com.example.cooperativevoting.eligibility.application.VoterEligibilityService;
 import com.example.cooperativevoting.shared.api.ApiRoutes;
 import com.example.cooperativevoting.vote.domain.VoteChoice;
 import com.example.cooperativevoting.votingsession.application.VotingSessionService;
